@@ -2,8 +2,16 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 # Import Autograd modules here
+import autograd.numpy as npa 
+from autograd import grad 
+
 
 class LinearRegression():
+
+    def MSE(self,current):                 
+        m = (self.X.T).dot((self.X.dot(current)) - self.y)
+        return (np.sum(np.square(m))/len(m))
+
     def __init__(self, fit_intercept=True):
         '''
         :param fit_intercept: Whether to calculate the intercept for this model. If set to False, no intercept will be used in calculations (i.e. data is expected to be centered).
@@ -27,10 +35,31 @@ class LinearRegression():
 
         :return None
         '''
-
+        n = len(X) 
+        batch_size =len(X)
+        temp = lr
+        if (self.fit_intercept):
+            bias = pd.DataFrame(pd.Series([1.0 for i in range(n)]))
+            X = pd.concat([bias,X],axis=1) 
+        column_length = len(X.columns)
+        theta = np.zeros(column_length)
+        for i in range(1,n_iter):
+            if (lr_type == 'inverse'):
+                lr = temp/i
+            current =  theta.copy()
+            for j in range(column_length):
+                DMSE = 0
+                for x in range(batch_size):
+                    y_hat = 0
+                    for k in range(column_length):
+                        y_hat += current[k]*X.iloc[x,k]
+                    DMSE += (y_hat - y.iloc[x])*X.iloc[x,j]
+                theta[j] = current[j] - DMSE/batch_size
+        self.coef_ = theta
+        return
         pass
 
-    def fit_vectorised(self, X, y,batch_size, n_iter=100, lr=0.01, lr_type='constant'):
+    def fit_vectorised(self, X, y,batch_size = None, n_iter=100, lr=0.01, lr_type='constant'):
         '''
         Function to train model using vectorised gradient descent.
 
@@ -44,7 +73,24 @@ class LinearRegression():
 
         :return None
         '''
-
+        if batch_size==None:
+            batch_size=len(X)
+        self.batch_size=batch_size
+        self.n_iter = n_iter
+        n = len(X)
+        batch_size = len(X)
+        temp = lr 
+        if (self.fit_intercept):
+            bias = pd.DataFrame(pd.Series([1.0 for i in range(len(X))]))
+            X = pd.concat([bias,X],axis=1)
+        column_length = len(X.columns)
+        theta = np.zeros(column_length)
+        for i in range(1,n_iter):
+            if (lr_type == 'inverse'):
+                lr = temp/i
+            current =  theta.copy()
+            theta = current - (2/batch_size)*lr*(X.T).dot((X.dot(current)) - y)        
+        self.coef_ = theta
         pass
 
     def fit_autograd(self, X, y, batch_size, n_iter=100, lr=0.01, lr_type='constant'):
@@ -62,7 +108,25 @@ class LinearRegression():
 
         :return None
         '''
-
+        self.n_iter = n_iter
+        n = len(X)
+        batch_size = len(X)
+        temp = lr
+        if (self.fit_intercept):
+            bias = pd.DataFrame(pd.Series([1.0 for i in range(len(X))]))
+            X = pd.concat([bias,X],axis=1)
+        column_length = len(X.columns)
+        theta = np.zeros(column_length)
+        grad_MSE = grad(self.MSE)
+        self.X = X
+        self.y = y
+        for i in range(1,n_iter):
+            if (lr_type == 'inverse'):
+                lr = temp/i
+            # X_train_values,Y_train_values = batches_of_X[i%total_batches],batches_of_Y[i*total_batches]
+            current =  theta.copy()
+            theta = current - (2/batch_size)*lr*grad_MSE(current)
+        self.coef_ = theta
         pass
 
     def fit_normal(self, X, y):
@@ -74,6 +138,10 @@ class LinearRegression():
 
         :return None
         '''
+        if (self.fit_intercept):
+            bias = pd.DataFrame(pd.Series([1.0 for i in range(len(X))]))
+            X = pd.concat([bias,X],axis=1)
+        self.coef_ = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
 
         pass
 
@@ -85,7 +153,12 @@ class LinearRegression():
 
         :return: y: pd.Series with rows corresponding to output variable. The output variable in a row is the prediction for sample in corresponding row in X.
         '''
+        X_hat = X.copy()
+        if (self.fit_intercept):
+            bias = pd.DataFrame(pd.Series([1.0 for i in range(len(X_hat))]))
+            X_hat = pd.concat([bias,X_hat],axis=1) 
 
+        return pd.Series(np.dot(X_hat,self.coef_))
         pass
 
     def plot_surface(self, X, y, t_0, t_1):
