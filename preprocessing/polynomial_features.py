@@ -7,13 +7,14 @@ import matplotlib.pyplot as plt
 
 class PolynomialFeatures():
     
-    def __init__(self, degree=2,include_bias=True):
+    def __init__(self, degree=None,include_bias=True):
         """
         Inputs:
         param degree : (int) max degree of polynomial features
         param include_bias : (boolean) specifies wheter to include bias term in returned feature array.
         """
-        
+        self.degree = degree
+        self.include_bias = include_bias
         
         pass
 
@@ -30,7 +31,15 @@ class PolynomialFeatures():
         Outputs:
         returns (np.array) Tranformed dataset.
         """
-        
+        new=[]
+        for i in range(len(X)):
+            temp=[]
+            if self.include_bias:
+                temp.append(1)
+            for j in range(1,self.degree+1):
+                temp.append(X[i]**j)
+            new.append(temp)
+        return np.array(new)
         pass
     
         
