@@ -1,3 +1,5 @@
+import numpy as np
+
 def accuracy(y_hat, y):
     """
     Function to calculate the accuracy
@@ -49,6 +51,8 @@ def rmse(y_hat, y):
     Output:
     > Returns the rmse as float
     """
+    assert(len(y_hat) == len(y))
+    return np.sqrt(np.mean(np.square(y_hat - y)))
 
     pass
 
@@ -61,4 +65,6 @@ def mae(y_hat, y):
     Output:
     > Returns the mae as float
     """
+    assert(y_hat.size == y.size)
+    return np.mean(np.abs(y_hat - y))
     pass
